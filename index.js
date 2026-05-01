@@ -86,7 +86,7 @@ Instructions:
         let podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
 
         // 3. Generate Audio using ElevenLabs
-        const voiceId = "21m00Tcm4TbcDqjt88lp"; // Rachel (Professional Female Voice)
+        const voiceId = "XrExE9yKIg1WjnnlVkGX"; // Matilda (Knowledgable, Professional Female Voice)
         const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
         
         const audioResponse = await axios({
@@ -131,11 +131,16 @@ Instructions:
         });
 
     } catch (error) {
-        console.error("Error generating summary or audio:", error);
+        let errorMessage = error.message;
+        if (error.response?.data) {
+            // If the error response is a stream, we can't just print it
+            errorMessage = `ElevenLabs Error: ${error.response.status}`;
+        }
+        console.error("Error generating summary or audio:", errorMessage);
         res.status(500).json({
             status: false,
             message: "Failed to generate summary or audio",
-            error: error.response?.data ? "ElevenLabs Error" : error.message
+            error: errorMessage
         });
     }
 });
