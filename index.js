@@ -5,6 +5,7 @@ const Anthropic = require("@anthropic-ai/sdk");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+const cron = require("node-cron");
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,33 @@ if (!fs.existsSync(publicDir)) {
 
 // Serve static files from public directory
 app.use("/audio", express.static(publicDir));
+
+// Cron job to clean up audio files every hour (deletes files older than 24 hours)
+cron.schedule("0 * * * *", () => {
+    console.log("Running audio cleanup job...");
+    const now = Date.now();
+    const expiryTime = 24 * 60 * 60 * 1000; // 24 hours
+
+    fs.readdir(publicDir, (err, files) => {
+        if (err) return console.error("Could not list the directory.", err);
+
+        files.forEach((file) => {
+            if (file.endsWith(".mp3")) {
+                const filePath = path.join(publicDir, file);
+                fs.stat(filePath, (err, stats) => {
+                    if (err) return console.error("Error stating file.", err);
+
+                    if (now - stats.mtimeMs > expiryTime) {
+                        fs.unlink(filePath, (err) => {
+                            if (err) return console.error("Error deleting file.", err);
+                            console.log(`Deleted old audio file: ${file}`);
+                        });
+                    }
+                });
+            }
+        });
+    });
+});
 
 const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -54,17 +82,25 @@ Instructions for each section:
 
 Ensure the tone is professional, direct, and actionable. Only output the requested sections.`;
 
-        // 2. Generate Podcast Script for Audio
-        const audioPrompt = `You are a professional practice consultant. Create a highly engaging, conversational, and communicative audio script (like a short podcast episode) summarizing the daily performance for a dental/medical practice.
+        // 2. Generate Polite/Coaching Podcast Script for Audio
+        const audioPrompt = `You are a professional practice consultant providing a daily update. Your goal is to be a polite, supportive, and advisory coach for the team.
 
 Use this data: ${JSON.stringify(payload, null, 2)}
 
-Instructions:
-- Tone: Energetic, encouraging, yet firm on performance gaps. Use phrases like "Hey team," "Let's dive into the numbers," and "Here's what we need to focus on today."
-- Structure: Start with a quick hook, go through the big wins, highlight the missed opportunities, and end with a "one big thing" to action today.
+Instructions for Tone and Language:
+- Be polite and encouraging. Use a supportive coaching tone.
+- AVOID hard commands or imperative verbs like "do this," "do that," "fix this," or "must."
+- ALWAYS use advisory language like "I would advise," "We might consider," "It could be helpful to," "A great area for us to look at would be," or "Perhaps we could try."
+- Use phrases like "Hey team," "I noticed some great things," and "One area where we can grow together is..."
+
+Structure:
+- Warm introduction.
+- Highlight the positive data points first.
+- Gently advise on areas for improvement based on the gaps.
+- End with a supportive and advisory "thought for the day."
 - Keep it under 2 minutes when spoken (approx 250-300 words).
 - DO NOT use the same structure as a written report. Make it sound natural for audio.
-- Only output the spoken script text. No stage directions like [Music starts].`;
+- ONLY output the spoken script text. No stage directions like [Music starts].`;
 
         // Parallel generation using Anthropic
         const [textResponse, audioScriptResponse] = await Promise.all([
@@ -86,7 +122,7 @@ Instructions:
         let podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
 
         // 3. Generate Audio using ElevenLabs
-        const voiceId = "XrExE9yKIg1WjnnlVkGX"; // Matilda (Knowledgable, Professional Female Voice)
+        const voiceId = "XrExE9yKIg1WjnnlVkGX"; // Matilda (Professional & Knowledgeable Female Voice)
         const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
         
         const audioResponse = await axios({
@@ -133,7 +169,6 @@ Instructions:
     } catch (error) {
         let errorMessage = error.message;
         if (error.response?.data) {
-            // If the error response is a stream, we can't just print it
             errorMessage = `ElevenLabs Error: ${error.response.status}`;
         }
         console.error("Error generating summary or audio:", errorMessage);
