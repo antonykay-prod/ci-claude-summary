@@ -86,7 +86,7 @@ Instructions:
         let podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
 
         // 3. Generate Audio using ElevenLabs
-        const voiceId = "pNInz6obpg8nEByWQX7d"; // Adam
+        const voiceId = "21m00Tcm4TbcDqjt88lp"; // Rachel (Professional Female Voice)
         const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
         
         const audioResponse = await axios({
