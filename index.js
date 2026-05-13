@@ -51,6 +51,61 @@ const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Prompt Configuration
+const prompts = {
+    textSummary: {
+        title: "Text Summary Prompt",
+        description: "Generates a daily summary report for dental/medical practices.",
+        content: `You are an AI assistant that generates a daily summary report for a dental/medical practice based on call analytics data. 
+Generate a clear, concise summary in the following exact format with these specific sections: Overview, Conversions, Follow Ups, Revenue Opportunities, and Coaching Signal.
+
+Use the following JSON data to generate the summary:
+{{DATA}}
+
+Instructions for each section:
+- Overview: Summarize total calls, the largest share by call type, missed calls, and unactioned voicemails.
+- Conversions: Detail the scheduling conversion rates. If benchmarks are provided, compare performance.
+- Follow Ups: Discuss unrecovered missed calls and unactioned voicemails.
+- Revenue Opportunities: Summarize open revenue opportunities.
+- Coaching Signal: State the team average call score and compare it against benchmarks.
+
+Ensure the tone is professional, direct, and actionable. Only output the requested sections.`
+    },
+    audioPodcast: {
+        title: "Audio Podcast Prompt",
+        description: "Generates a supportive and advisory coaching script for the team.",
+        content: `You are a professional practice consultant providing a daily update. Your goal is to be a polite, supportive, and advisory coach for the team.
+
+Use this data: {{DATA}}
+
+Instructions for Tone and Language:
+- Be polite and encouraging. Use a supportive coaching tone.
+- AVOID hard commands or imperative verbs like "do this," "do that," "fix this," or "must."
+- ALWAYS use advisory language like "I would advise," "We might consider," "It could be helpful to," "A great area for us to look at would be," or "Perhaps we could try."
+- Use phrases like "Hey team," "I noticed some great things," and "One area where we can grow together is..."
+
+Structure:
+- Warm introduction.
+- Highlight the positive data points first.
+- Gently advise on areas for improvement based on the gaps.
+- End with a supportive and advisory "thought for the day."
+- Keep it under 2 minutes when spoken (approx 250-300 words).
+- DO NOT use the same structure as a written report. Make it sound natural for audio.
+- ONLY output the spoken script text. No stage directions like [Music starts].`
+    }
+};
+
+// API to get prompts
+app.get("/api/prompts", (req, res) => {
+    res.json({
+        status: true,
+        prompts: prompts
+    });
+});
+
+// Serve frontend from public directory
+app.use(express.static(path.join(__dirname, "public")));
+
 app.post("/api/summary", async (req, res) => {
     try {
         const payload = req.body;
@@ -66,41 +121,13 @@ app.post("/api/summary", async (req, res) => {
             payload.benchmarks = cleanedBenchmarks;
         }
 
+        const dataString = JSON.stringify(payload, null, 2);
+
         // 1. Generate Text Summary
-        const textPrompt = `You are an AI assistant that generates a daily summary report for a dental/medical practice based on call analytics data. 
-Generate a clear, concise summary in the following exact format with these specific sections: Overview, Conversions, Follow Ups, Revenue Opportunities, and Coaching Signal.
-
-Use the following JSON data to generate the summary:
-${JSON.stringify(payload, null, 2)}
-
-Instructions for each section:
-- Overview: Summarize total calls, the largest share by call type, missed calls, and unactioned voicemails.
-- Conversions: Detail the scheduling conversion rates. If benchmarks are provided, compare performance.
-- Follow Ups: Discuss unrecovered missed calls and unactioned voicemails.
-- Revenue Opportunities: Summarize open revenue opportunities.
-- Coaching Signal: State the team average call score and compare it against benchmarks.
-
-Ensure the tone is professional, direct, and actionable. Only output the requested sections.`;
+        const textPrompt = prompts.textSummary.content.replace("{{DATA}}", dataString);
 
         // 2. Generate Polite/Coaching Podcast Script for Audio
-        const audioPrompt = `You are a professional practice consultant providing a daily update. Your goal is to be a polite, supportive, and advisory coach for the team.
-
-Use this data: ${JSON.stringify(payload, null, 2)}
-
-Instructions for Tone and Language:
-- Be polite and encouraging. Use a supportive coaching tone.
-- AVOID hard commands or imperative verbs like "do this," "do that," "fix this," or "must."
-- ALWAYS use advisory language like "I would advise," "We might consider," "It could be helpful to," "A great area for us to look at would be," or "Perhaps we could try."
-- Use phrases like "Hey team," "I noticed some great things," and "One area where we can grow together is..."
-
-Structure:
-- Warm introduction.
-- Highlight the positive data points first.
-- Gently advise on areas for improvement based on the gaps.
-- End with a supportive and advisory "thought for the day."
-- Keep it under 2 minutes when spoken (approx 250-300 words).
-- DO NOT use the same structure as a written report. Make it sound natural for audio.
-- ONLY output the spoken script text. No stage directions like [Music starts].`;
+        const audioPrompt = prompts.audioPodcast.content.replace("{{DATA}}", dataString);
 
         // Parallel generation using Anthropic
         const [textResponse, audioScriptResponse] = await Promise.all([
@@ -184,3 +211,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
