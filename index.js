@@ -228,9 +228,13 @@ app.post("/api/summary", async (req, res) => {
 
         if (cacheKey) {
             responseCache[cacheKey] = {
+                organization,
+                location,
+                date_range,
                 summaryText,
                 podcastScript,
-                audioUrl
+                audioUrl,
+                payload
             };
         }
 
@@ -252,6 +256,39 @@ app.post("/api/summary", async (req, res) => {
             message: "Failed to generate summary or audio",
             error: errorMessage
         });
+    }
+});
+
+// API to get all cached items
+app.get("/api/cache", (req, res) => {
+    const cacheList = Object.keys(responseCache).map(key => {
+        return {
+            key,
+            organization: responseCache[key].organization,
+            location: responseCache[key].location,
+            date_range: responseCache[key].date_range,
+            summaryText: responseCache[key].summaryText,
+            audioUrl: responseCache[key].audioUrl,
+            payload: responseCache[key].payload
+        };
+    });
+    res.json({ status: true, cache: cacheList });
+});
+
+// API to delete selected cached items
+app.delete("/api/cache", (req, res) => {
+    const { keys } = req.body;
+    if (keys && Array.isArray(keys)) {
+        let deletedCount = 0;
+        keys.forEach(key => {
+            if (responseCache[key]) {
+                delete responseCache[key];
+                deletedCount++;
+            }
+        });
+        res.json({ status: true, message: `Deleted ${deletedCount} items from cache` });
+    } else {
+        res.status(400).json({ status: false, message: "Invalid keys provided" });
     }
 });
 

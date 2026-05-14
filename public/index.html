@@ -19,13 +19,46 @@
             <p class="subtitle">Management and visualization of AI prompts used in CI Action Centre Summary.</p>
         </header>
 
-        <main id="prompt-list" class="prompt-grid">
-            <!-- Prompts will be injected here -->
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>Loading prompts...</p>
+        <nav class="tabs">
+            <button class="tab-btn active" onclick="switchTab('prompts')">Prompts</button>
+            <button class="tab-btn" onclick="switchTab('dashboard')">Cache Dashboard</button>
+        </nav>
+
+        <div id="tab-prompts" class="tab-content active">
+            <main id="prompt-list" class="prompt-grid">
+                <!-- Prompts will be injected here -->
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading prompts...</p>
+                </div>
+            </main>
+        </div>
+
+        <div id="tab-dashboard" class="tab-content">
+            <div class="dashboard-controls">
+                <input type="text" id="search-location" placeholder="Search Location ID...">
+                <input type="text" id="search-date" placeholder="Search Date Range (e.g. 01-05-2026)">
+                <button onclick="fetchCache()">Refresh</button>
+                <button class="danger-btn" onclick="deleteSelected()">Delete Selected</button>
+                <button class="primary-btn" onclick="regenerateSelected()">Regenerate Selected</button>
             </div>
-        </main>
+            
+            <div class="table-container">
+                <table id="cache-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
+                            <th>Date Range</th>
+                            <th>Organization</th>
+                            <th>Location</th>
+                            <th>Audio Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cache-list">
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <footer>
             <p>&copy; 2026 CI Action Centre. All prompts are powered by Claude 3.5 Opus.</p>
@@ -108,6 +141,108 @@
         }
 
         fetchPrompts();
+        fetchCache();
+
+        // Dashboard Cache Logic
+        let cacheData = [];
+        async function fetchCache() {
+            try {
+                const response = await fetch('/api/cache');
+                const data = await response.json();
+                if (data.status) {
+                    cacheData = data.cache;
+                    renderCache();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        function renderCache() {
+            const tbody = document.getElementById('cache-list');
+            const locQuery = document.getElementById('search-location').value.toLowerCase();
+            const dateQuery = document.getElementById('search-date').value.toLowerCase();
+            
+            tbody.innerHTML = '';
+            cacheData.forEach(item => {
+                if (locQuery && !(item.location || '').toLowerCase().includes(locQuery)) return;
+                if (dateQuery && !(item.date_range || '').toLowerCase().includes(dateQuery)) return;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="cache-cb" value="${item.key}" data-payload='${JSON.stringify(item.payload || {}).replace(/'/g, "&#39;")}'></td>
+                    <td>${item.date_range || 'N/A'}</td>
+                    <td>${item.organization || 'N/A'}</td>
+                    <td>${item.location || 'N/A'}</td>
+                    <td>${item.audioUrl ? `<a href="${item.audioUrl}" target="_blank">Listen</a>` : 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        document.getElementById('search-location').addEventListener('input', renderCache);
+        document.getElementById('search-date').addEventListener('input', renderCache);
+        
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('select-all').checked;
+            document.querySelectorAll('.cache-cb').forEach(cb => cb.checked = selectAll);
+        }
+        
+        async function deleteSelected() {
+            const keys = Array.from(document.querySelectorAll('.cache-cb:checked')).map(cb => cb.value);
+            if (!keys.length) return alert('Select items to delete');
+            
+            await fetch('/api/cache', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keys })
+            });
+            fetchCache();
+        }
+        
+        async function regenerateSelected() {
+            const selected = Array.from(document.querySelectorAll('.cache-cb:checked'));
+            if (!selected.length) return alert('Select items to regenerate');
+            
+            const btn = document.querySelector('.primary-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Regenerating...';
+            btn.disabled = true;
+
+            const keys = selected.map(cb => cb.value);
+            
+            // 1. Delete from cache so it forces a regeneration
+            await fetch('/api/cache', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keys })
+            });
+            
+            // 2. Call summary api to recreate
+            for (const cb of selected) {
+                const payload = JSON.parse(cb.dataset.payload);
+                try {
+                    await fetch('/api/summary', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                } catch(e) { console.error(e); }
+            }
+            
+            btn.textContent = originalText;
+            btn.disabled = false;
+            document.getElementById('select-all').checked = false;
+            fetchCache();
+        }
+        
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            if(tabId === 'dashboard') fetchCache();
+        }
     </script>
 </body>
 </html>
