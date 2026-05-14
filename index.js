@@ -182,24 +182,53 @@ app.post("/api/summary", async (req, res) => {
             // 2. Generate Polite/Coaching Podcast Script for Audio
             const audioPrompt = prompts.audioPodcast.content.replace("{{DATA}}", dataString);
 
-            // Parallel generation using Anthropic
-            const [textResponse, audioScriptResponse] = await Promise.all([
-                anthropic.messages.create({
-                    model: "claude-opus-4-7",
-                    max_tokens: 2000,
-                    thinking: { type: "adaptive" },
-                    messages: [{ role: "user", content: textPrompt }]
-                }),
-                anthropic.messages.create({
-                    model: "claude-opus-4-7",
-                    max_tokens: 2000,
-                    thinking: { type: "adaptive" },
-                    messages: [{ role: "user", content: audioPrompt }]
-                })
-            ]);
+            try {
+                // Parallel generation using Anthropic
+                const [textResponse, audioScriptResponse] = await Promise.all([
+                    anthropic.messages.create({
+                        model: "claude-opus-4-7",
+                        max_tokens: 2000,
+                        thinking: { type: "adaptive" },
+                        messages: [{ role: "user", content: textPrompt }]
+                    }),
+                    anthropic.messages.create({
+                        model: "claude-opus-4-7",
+                        max_tokens: 2000,
+                        thinking: { type: "adaptive" },
+                        messages: [{ role: "user", content: audioPrompt }]
+                    })
+                ]);
 
-            summaryText = textResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
-            podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
+                summaryText = textResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
+                podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
+            } catch (claudeError) {
+                console.error("Claude API failed, falling back to OpenAI:", claudeError.message);
+                
+                const openAiUrl = "https://api.openai.com/v1/chat/completions";
+                const openAiKey = process.env.OPENAI_API_KEY;
+                
+                const getOpenAiCompletion = async (prompt) => {
+                    const response = await axios.post(openAiUrl, {
+                        model: "gpt-4o",
+                        messages: [{ role: "user", content: prompt }],
+                        max_tokens: 2000
+                    }, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${openAiKey}`
+                        }
+                    });
+                    return response.data.choices[0].message.content;
+                };
+
+                const [textResponse, audioScriptResponse] = await Promise.all([
+                    getOpenAiCompletion(textPrompt),
+                    getOpenAiCompletion(audioPrompt)
+                ]);
+                
+                summaryText = textResponse;
+                podcastScript = audioScriptResponse;
+            }
         }
 
         // 3. Generate Audio using ElevenLabs
