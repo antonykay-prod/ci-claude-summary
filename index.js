@@ -11,6 +11,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// In-memory cache for API responses
+const responseCache = {};
+
 // Create public directory for audio files
 const publicDir = path.join(__dirname, "public");
 if (!fs.existsSync(publicDir)) {
@@ -109,6 +112,41 @@ app.use(express.static(path.join(__dirname, "public")));
 app.post("/api/summary", async (req, res) => {
     try {
         const payload = req.body;
+        
+        const { organization, location, startDate, endDate } = payload;
+        const cacheKey = organization && location && startDate && endDate 
+            ? `${organization}_${location}_${startDate}_${endDate}` 
+            : null;
+
+        let summaryText;
+        let podcastScript;
+        let useCachedAudio = false;
+        let cachedAudioUrl = null;
+
+        if (cacheKey && responseCache[cacheKey]) {
+            const cached = responseCache[cacheKey];
+            summaryText = cached.summaryText;
+            podcastScript = cached.podcastScript;
+            
+            if (cached.audioUrl) {
+                const audioFileName = cached.audioUrl.split('/').pop();
+                const audioFilePath = path.join(publicDir, audioFileName);
+                if (fs.existsSync(audioFilePath)) {
+                    useCachedAudio = true;
+                    cachedAudioUrl = cached.audioUrl;
+                }
+            }
+        }
+
+        if (useCachedAudio) {
+            console.log(`Full cache hit for key: ${cacheKey}`);
+            return res.json({
+                status: true,
+                message: "Summary and Audio retrieved from cache successfully",
+                summary: summaryText,
+                audio_url: cachedAudioUrl
+            });
+        }
 
         // Clean benchmarks to remove empty/undefined ones
         let cleanedBenchmarks = {};
@@ -123,30 +161,32 @@ app.post("/api/summary", async (req, res) => {
 
         const dataString = JSON.stringify(payload, null, 2);
 
-        // 1. Generate Text Summary
-        const textPrompt = prompts.textSummary.content.replace("{{DATA}}", dataString);
+        if (!summaryText || !podcastScript) {
+            // 1. Generate Text Summary
+            const textPrompt = prompts.textSummary.content.replace("{{DATA}}", dataString);
 
-        // 2. Generate Polite/Coaching Podcast Script for Audio
-        const audioPrompt = prompts.audioPodcast.content.replace("{{DATA}}", dataString);
+            // 2. Generate Polite/Coaching Podcast Script for Audio
+            const audioPrompt = prompts.audioPodcast.content.replace("{{DATA}}", dataString);
 
-        // Parallel generation using Anthropic
-        const [textResponse, audioScriptResponse] = await Promise.all([
-            anthropic.messages.create({
-                model: "claude-opus-4-7",
-                max_tokens: 2000,
-                thinking: { type: "adaptive" },
-                messages: [{ role: "user", content: textPrompt }]
-            }),
-            anthropic.messages.create({
-                model: "claude-opus-4-7",
-                max_tokens: 2000,
-                thinking: { type: "adaptive" },
-                messages: [{ role: "user", content: audioPrompt }]
-            })
-        ]);
+            // Parallel generation using Anthropic
+            const [textResponse, audioScriptResponse] = await Promise.all([
+                anthropic.messages.create({
+                    model: "claude-opus-4-7",
+                    max_tokens: 2000,
+                    thinking: { type: "adaptive" },
+                    messages: [{ role: "user", content: textPrompt }]
+                }),
+                anthropic.messages.create({
+                    model: "claude-opus-4-7",
+                    max_tokens: 2000,
+                    thinking: { type: "adaptive" },
+                    messages: [{ role: "user", content: audioPrompt }]
+                })
+            ]);
 
-        let summaryText = textResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
-        let podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
+            summaryText = textResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
+            podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
+        }
 
         // 3. Generate Audio using ElevenLabs
         const voiceId = "XrExE9yKIg1WjnnlVkGX"; // Matilda (Professional & Knowledgeable Female Voice)
@@ -185,6 +225,14 @@ app.post("/api/summary", async (req, res) => {
         const protocol = req.protocol;
         const host = req.get("host");
         const audioUrl = `${protocol}://${host}/audio/${fileName}`;
+
+        if (cacheKey) {
+            responseCache[cacheKey] = {
+                summaryText,
+                podcastScript,
+                audioUrl
+            };
+        }
 
         res.json({
             status: true,
