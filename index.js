@@ -113,9 +113,9 @@ app.post("/api/summary", async (req, res) => {
     try {
         const payload = req.body;
         
-        const { organization, location, startDate, endDate } = payload;
-        const cacheKey = organization && location && startDate && endDate 
-            ? `${organization}_${location}_${startDate}_${endDate}` 
+        const { organization, location, date_range } = payload;
+        const cacheKey = organization && location && date_range 
+            ? `${organization}_${location}_${date_range}` 
             : null;
 
         let summaryText;
