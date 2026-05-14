@@ -113,7 +113,21 @@ app.post("/api/summary", async (req, res) => {
     try {
         const payload = req.body;
         
-        const { organization, location, date_range } = payload;
+        const location = payload.data?.location || payload.location;
+        const organization = payload.data?.organization || payload.organization;
+        
+        let date_range = null;
+        if (payload.Date_range && payload.Date_range.startDate && payload.Date_range.endDate) {
+            // Convert timestamp to readable format for better dashboard viewing
+            const start = new Date(parseInt(payload.Date_range.startDate)).toISOString().split('T')[0];
+            const end = new Date(parseInt(payload.Date_range.endDate)).toISOString().split('T')[0];
+            date_range = `${start} to ${end}`;
+        } else if (payload.date_range) {
+            date_range = payload.date_range;
+        } else if (payload.startDate && payload.endDate) {
+            date_range = `${payload.startDate}_${payload.endDate}`;
+        }
+
         const cacheKey = organization && location && date_range 
             ? `${organization}_${location}_${date_range}` 
             : null;
