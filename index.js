@@ -236,8 +236,8 @@ app.post("/api/summary", async (req, res) => {
             writer.on("error", reject);
         });
 
-        const protocol = req.protocol;
         const host = req.get("host");
+        const protocol = host.includes("localhost") ? "http" : "https";
         const audioUrl = `${protocol}://${host}/audio/${fileName}`;
 
         if (cacheKey) {
