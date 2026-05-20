@@ -33,7 +33,7 @@ cron.schedule("0 * * * *", () => {
         if (err) return console.error("Could not list the directory.", err);
 
         files.forEach((file) => {
-            if (file.endsWith(".mp3")) {
+            if (file.endsWith(".mp3") && file !== "not-enough-data.mp3") {
                 const filePath = path.join(publicDir, file);
                 fs.stat(filePath, (err, stats) => {
                     if (err) return console.error("Error stating file.", err);
@@ -59,7 +59,7 @@ const prompts = {
     textSummary: {
         title: "Text Summary Prompt",
         description: "Generates a daily summary report for dental/medical practices.",
-        content: `You are an AI assistant that generates a daily summary report for a dental/medical practice based on call analytics data. 
+        content: `You are an AI assistant that generates a daily summary report for a dental/medical practice based on call analytics data.
 Generate a clear, concise summary in the following exact format with these specific sections: Overview, Conversions, Follow Ups, Revenue Opportunities, and Coaching Signal.
 
 Use the following JSON data to generate the summary:
@@ -72,7 +72,21 @@ Instructions for each section:
 - Revenue Opportunities: Summarize open revenue opportunities.
 - Coaching Signal: State the team average call score and compare it against benchmarks.
 
-Ensure the tone is professional, direct, and actionable. Only output the requested sections.`
+Ensure the tone is professional, direct, and actionable. Only output the requested sections.
+
+Always begin your response with exactly the following header block, replacing the date dynamically based on the data:
+
+# Daily Summary Report
+**Date:** {{DATE}}
+
+---
+
+## Overview
+
+If no call activity exists for the reporting period, the Overview section must begin with:
+"No call activity was recorded for this reporting period. Total calls logged: **0**."
+
+Then continue with the remaining sections using neutral/empty language where no data is available.`
     },
     audioPodcast: {
         title: "Audio Podcast Prompt",
@@ -112,10 +126,10 @@ app.use(express.static(path.join(__dirname, "public")));
 app.post("/api/summary", async (req, res) => {
     try {
         const payload = req.body;
-        
+
         const location = payload.data?.location || payload.location;
         const organization = payload.data?.organization || payload.organization;
-        
+
         let date_range = null;
         if (payload.Date_range && payload.Date_range.startDate && payload.Date_range.endDate) {
             // Convert timestamp to readable format for better dashboard viewing
@@ -128,8 +142,8 @@ app.post("/api/summary", async (req, res) => {
             date_range = `${payload.startDate}_${payload.endDate}`;
         }
 
-        const cacheKey = organization && location && date_range 
-            ? `${organization}_${location}_${date_range}` 
+        const cacheKey = organization && location && date_range
+            ? `${organization}_${location}_${date_range}`
             : null;
 
         let summaryText;
@@ -141,7 +155,7 @@ app.post("/api/summary", async (req, res) => {
             const cached = responseCache[cacheKey];
             summaryText = cached.summaryText;
             podcastScript = cached.podcastScript;
-            
+
             if (cached.audioUrl) {
                 const audioFileName = cached.audioUrl.split('/').pop();
                 const audioFilePath = path.join(publicDir, audioFileName);
@@ -160,6 +174,13 @@ app.post("/api/summary", async (req, res) => {
                 summary: summaryText,
                 audio_url: cachedAudioUrl
             });
+        }
+
+        let isNotEnoughData = payload.preference_predates_range === false;
+        
+        if (isNotEnoughData) {
+            summaryText = "Not Enough Data to Show";
+            podcastScript = "Hey Team, since your action center was set up not so long ago we lack data to create a summary, please keep using it and the data would be populated automatically";
         }
 
         // Clean benchmarks to remove empty/undefined ones
@@ -203,10 +224,10 @@ app.post("/api/summary", async (req, res) => {
                 podcastScript = audioScriptResponse.content.filter(b => b.type === "text").map(b => b.text).join("");
             } catch (claudeError) {
                 console.error("Claude API failed, falling back to OpenAI:", claudeError.message);
-                
+
                 const openAiUrl = "https://api.openai.com/v1/chat/completions";
                 const openAiKey = process.env.OPENAI_API_KEY;
-                
+
                 const getOpenAiCompletion = async (prompt) => {
                     const response = await axios.post(openAiUrl, {
                         model: "gpt-4o",
@@ -225,45 +246,60 @@ app.post("/api/summary", async (req, res) => {
                     getOpenAiCompletion(textPrompt),
                     getOpenAiCompletion(audioPrompt)
                 ]);
-                
+
                 summaryText = textResponse;
                 podcastScript = audioScriptResponse;
             }
         }
 
         // 3. Generate Audio using ElevenLabs
-        const voiceId = "XrExE9yKIg1WjnnlVkGX"; // Matilda (Professional & Knowledgeable Female Voice)
-        const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
-        
-        const audioResponse = await axios({
-            method: "post",
-            url: elevenLabsUrl,
-            data: {
-                text: podcastScript,
-                model_id: "eleven_monolingual_v1",
-                voice_settings: {
-                    stability: 0.5,
-                    similarity_boost: 0.75
-                }
-            },
-            headers: {
-                "Accept": "audio/mpeg",
-                "xi-api-key": process.env.ELEVEN_LABS_API_KEY,
-                "Content-Type": "application/json"
-            },
-            responseType: "stream"
-        });
+        let fileName;
+        let filePath;
+        let audioGenerated = false;
 
-        const fileName = `summary-${Date.now()}.mp3`;
-        const filePath = path.join(publicDir, fileName);
-        const writer = fs.createWriteStream(filePath);
+        if (isNotEnoughData) {
+            fileName = "not-enough-data.mp3";
+            filePath = path.join(publicDir, fileName);
+            if (fs.existsSync(filePath)) {
+                audioGenerated = true;
+            }
+        } else {
+            fileName = `summary-${Date.now()}.mp3`;
+            filePath = path.join(publicDir, fileName);
+        }
 
-        audioResponse.data.pipe(writer);
+        if (!audioGenerated) {
+            const voiceId = "XrExE9yKIg1WjnnlVkGX"; // Matilda (Professional & Knowledgeable Female Voice)
+            const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
-        await new Promise((resolve, reject) => {
-            writer.on("finish", resolve);
-            writer.on("error", reject);
-        });
+            const audioResponse = await axios({
+                method: "post",
+                url: elevenLabsUrl,
+                data: {
+                    text: podcastScript,
+                    model_id: "eleven_monolingual_v1",
+                    voice_settings: {
+                        stability: 0.5,
+                        similarity_boost: 0.75
+                    }
+                },
+                headers: {
+                    "Accept": "audio/mpeg",
+                    "xi-api-key": process.env.ELEVEN_LABS_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                responseType: "stream"
+            });
+
+            const writer = fs.createWriteStream(filePath);
+
+            audioResponse.data.pipe(writer);
+
+            await new Promise((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
+        }
 
         const host = req.get("host");
         const protocol = host.includes("localhost") ? "http" : "https";
