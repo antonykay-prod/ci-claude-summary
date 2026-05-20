@@ -179,7 +179,11 @@ app.post("/api/summary", async (req, res) => {
         let isNotEnoughData = payload.preference_predates_range === false;
         
         if (isNotEnoughData) {
-            summaryText = "Not Enough Data to Show";
+            let displayDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+            if (payload.Date_range && payload.Date_range.endDate) {
+                displayDate = new Date(parseInt(payload.Date_range.endDate)).toLocaleDateString('en-GB').replace(/\//g, '-');
+            }
+            summaryText = `# Daily Summary Report\n**Date:** ${displayDate}\n\n---\n\n## Not Enough Data to Show`;
             podcastScript = "Hey Team, since your action center was set up not so long ago we lack data to create a summary, please keep using it and the data would be populated automatically";
         }
 
