@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voice Comparison — CI Action Centre</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0d0f18;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .page-header p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #161b2e;
+      border: 1px solid #1e2a45;
+      border-radius: 16px;
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .card:hover {
+      border-color: #a78bfa55;
+      transform: translateY(-2px);
+    }
+
+    .card.current {
+      border-color: #7c3aed44;
+      background: linear-gradient(145deg, #1a1535, #161b2e);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .card-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .card-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    .badge-current { background: #7c3aed33; color: #c4b5fd; border: 1px solid #7c3aed55; }
+    .badge-excited { background: #dc262633; color: #fca5a5; border: 1px solid #dc262655; }
+    .badge-upbeat  { background: #0284c733; color: #7dd3fc; border: 1px solid #0284c755; }
+    .badge-warm    { background: #d9770633; color: #fcd34d; border: 1px solid #d9770655; }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #1e2a45;
+      color: #94a3b8;
+      border: 1px solid #2d3a55;
+    }
+
+    audio {
+      width: 100%;
+      height: 40px;
+      border-radius: 8px;
+      accent-color: #a78bfa;
+      outline: none;
+    }
+
+    audio::-webkit-media-controls-panel {
+      background: #1e2a45;
+    }
+
+    .pick-btn {
+      margin-top: 14px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #2d3a55;
+      background: transparent;
+      color: #94a3b8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pick-btn:hover {
+      background: #a78bfa22;
+      border-color: #a78bfa;
+      color: #c4b5fd;
+    }
+
+    .pick-btn.selected {
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .chosen-banner {
+      max-width: 1100px;
+      margin: 32px auto 0;
+      padding: 20px 28px;
+      background: linear-gradient(135deg, #1a1535, #0f172a);
+      border: 1px solid #7c3aed55;
+      border-radius: 16px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .chosen-banner.visible { display: flex; }
+
+    .chosen-banner span { font-size: 0.95rem; color: #c4b5fd; }
+    .chosen-banner strong { color: #fff; }
+
+    .copy-id {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: #0d0f18;
+      padding: 4px 12px;
+      border-radius: 6px;
+      color: #60a5fa;
+      border: 1px solid #1e2a45;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copy-id:hover { background: #1e2a45; }
+
+    .section-note {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+      background: #161b2e;
+      border: 1px solid #1e2a45;
+      border-left: 3px solid #a78bfa;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    .section-note strong { color: #e2e8f0; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>🎙️ Voice Comparison</h1>
+    <p>American English · Female · Enthusiastic & Cheerful</p>
+  </div>
+
+  <div class="section-note">
+    All samples use the <strong>same script</strong> so you can compare tone, energy, and clarity side by side. 
+    Click <strong>▶ Play</strong> on each card, then hit <strong>"Pick this voice"</strong> on your favourite.
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="chosen-banner" id="banner">
+    <span>✅ You selected: <strong id="banner-name"></strong></span>
+    <span>Voice ID: <code class="copy-id" id="banner-id" onclick="copyId()" title="Click to copy"></code></span>
+  </div>
+
+  <script>
+    const voices = [
+      {
+        id: "XrExE9yKIg1WjnnlVkGX",
+        name: "Matilda",
+        subtitle: "Current voice",
+        emoji: "🌟",
+        badge: "current",
+        badgeLabel: "Currently in use",
+        tags: ["middle-aged", "upbeat", "professional", "educational"],
+        file: "Matilda_Current.mp3"
+      },
+      {
+        id: "y3H6zY6KvCH2pEuQjmv8",
+        name: "Lively Amy",
+        subtitle: "Upbeat · Conversational · Excited",
+        emoji: "⚡",
+        badge: "excited",
+        badgeLabel: "Most Energetic",
+        tags: ["middle-aged", "excited", "conversational", "engaging"],
+        file: "Lively_Amy.mp3"
+      },
+      {
+        id: "FLj50PrMa40MhGHappOt",
+        name: "Beth",
+        subtitle: "Commercial · Upbeat · Engaging",
+        emoji: "✨",
+        badge: "upbeat",
+        badgeLabel: "Upbeat & Clear",
+        tags: ["young", "upbeat", "advertisement", "bright"],
+        file: "Beth.mp3"
+      },
+      {
+        id: "XZUXLIpE3dqJ9aCZUj2R",
+        name: "Kristen",
+        subtitle: "Upbeat Social Media Influencer",
+        emoji: "🎉",
+        badge: "upbeat",
+        badgeLabel: "High Energy",
+        tags: ["young", "upbeat", "social", "modern"],
+        file: "Kristen.mp3"
+      },
+      {
+        id: "tnSpp4vdxKPjI9w0GnoV",
+        name: "Hope",
+        subtitle: "Upbeat and Clear",
+        emoji: "💫",
+        badge: "upbeat",
+        badgeLabel: "Upbeat & Clear",
+        tags: ["young", "upbeat", "clear", "social"],
+        file: "Hope_Upbeat.mp3"
+      },
+      {
+        id: "H1GhCI6GEKiSXZcwmUkc",
+        name: "Vivie",
+        subtitle: "Upbeat · Friendly · Mature",
+        emoji: "🌈",
+        badge: "warm",
+        badgeLabel: "Warm & Approachable",
+        tags: ["middle-aged", "upbeat", "friendly", "mature"],
+        file: "Vivie_2.mp3"
+      }
+    ];
+
+    let selected = null;
+
+    function copyId() {
+      const id = document.getElementById("banner-id").textContent;
+      navigator.clipboard.writeText(id).then(() => {
+        document.getElementById("banner-id").textContent = "Copied!";
+        setTimeout(() => document.getElementById("banner-id").textContent = id, 1500);
+      });
+    }
+
+    function pickVoice(voice) {
+      selected = voice;
+      document.querySelectorAll(".pick-btn").forEach(b => b.classList.remove("selected"));
+      document.getElementById("pick-" + voice.id).classList.add("selected");
+      document.getElementById("banner-name").textContent = voice.name;
+      document.getElementById("banner-id").textContent = voice.id;
+      document.getElementById("banner").classList.add("visible");
+    }
+
+    const grid = document.getElementById("grid");
+
+    voices.forEach(v => {
+      const card = document.createElement("div");
+      card.className = "card" + (v.badge === "current" ? " current" : "");
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="avatar" style="background: ${v.badge === 'current' ? '#1a1535' : v.badge === 'excited' ? '#1f0e0e' : v.badge === 'warm' ? '#1f1208' : '#0e1a2e'}">
+            ${v.emoji}
+          </div>
+          <div>
+            <div class="card-name">${v.name}</div>
+            <span class="card-badge badge-${v.badge}">${v.badgeLabel}</span>
+          </div>
+        </div>
+        <div class="tags">
+          ${v.tags.map(t => `<span class="tag">${t}</span>`).join("")}
+        </div>
+        <audio controls src="/voice-samples/${v.file}"></audio>
+        <button class="pick-btn" id="pick-${v.id}" onclick='pickVoice(${JSON.stringify(v)})'>
+          Pick this voice →
+        </button>
+      `;
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>

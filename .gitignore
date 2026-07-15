@@ -1,3 +1,11 @@
 node_modules/
 .env
 .DS_Store
+
+# Generated audio files
+public/*.mp3
+public/voice-samples/
+sample.mp3
+
+# Temp/dev scripts
+sample_voices.js

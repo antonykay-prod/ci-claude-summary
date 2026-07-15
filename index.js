@@ -120,6 +120,79 @@ app.get("/api/prompts", (req, res) => {
     });
 });
 
+// API to get pre-generated sample data for Daily, Weekly, and Monthly reports
+app.get("/api/samples", (req, res) => {
+    const sampleData = {
+        yesterday: {
+            title: "Yesterday's Performance Summary",
+            date: "Yesterday",
+            metrics: {
+                totalCalls: 52,
+                schedulingConversion: 34,
+                schedulingTarget: 40,
+                missedCalls: 8,
+                unactionedVoicemails: 3,
+                revenuePotential: 6190,
+                hotRevenueOpportunities: 2,
+                avgCallScore: 71,
+                avgCallScoreTarget: 75
+            },
+            audioUrl: "/audio/sample-yesterday.mp3",
+            overview: "Your practice handled **52** calls yesterday. Scheduling calls made up the largest share at **44%**, followed by general inquiries. **8** calls were missed and **3** voicemails remain un-actioned.",
+            conversions: "New patient scheduling conversion dropped to **34%** against a **40%** target, driven by a weak **2–5 PM** window. Existing patient and recare conversion held steady. Cancellations were higher than average at **29%** of rescheduling attempts.",
+            followUps: "Of the **8** missed calls, **2** have not been recovered — both were new patients. All **3** unactioned voicemails are pending a return call, with one caller expressing frustration on the message.",
+            revenueOpportunities: "**5** open opportunities were generated between **8 AM** yesterday and **8 AM** today, totalling **$6,190** in potential revenue. **2** are flagged **HOT** and need same-day outreach.",
+            coachingSignals: "Team average call score was **71 / 100**, against a target of **75**. Two reps scored below **65**. The most common gaps were failing to offer an immediate slot, not confirming next steps, and missing the opportunity to present a treatment option on recare calls."
+        },
+        last7days: {
+            title: "Weekly Performance Summary",
+            date: "Last 7 Days",
+            metrics: {
+                totalCalls: 348,
+                schedulingConversion: 36,
+                schedulingTarget: 40,
+                missedCalls: 38,
+                unactionedVoicemails: 12,
+                revenuePotential: 34850,
+                hotRevenueOpportunities: 6,
+                avgCallScore: 73,
+                avgCallScoreTarget: 75
+            },
+            audioUrl: "/audio/sample-7days.mp3",
+            overview: "Your practice handled **348** calls over the last 7 days. Scheduling calls accounted for **41%** of total call volume, followed closely by billing and general inquiries. **38** calls were missed and **12** voicemails remain un-actioned.",
+            conversions: "New patient scheduling conversion averaged **36%** against a **40%** target, showing persistent vulnerability during the late afternoon **2–5 PM** window. Existing patient and recare conversion held steady and strong at **78%** and **62%** respectively. Cancellations averaged **24%** of all rescheduling attempts.",
+            followUps: "Of the **38** missed calls, **8** have not been recovered — **5** of which were new patients. Out of **12** unactioned voicemails, **3** are pending a return call, with **1** containing an urgent escalation flag.",
+            revenueOpportunities: "**28** open opportunities were generated over the last 7 days, totalling **$34,850** in potential revenue. **6** are flagged **HOT** and require active follow-up.",
+            coachingSignals: "Team weekly average call score was **73 / 100**, against a **75** target. One rep scored below **65**. Common gaps include failing to offer immediate open slots, weak next-step confirmations, and missing opportunities to present treatment options on recare calls."
+        },
+        last30days: {
+            title: "Monthly Performance Summary",
+            date: "Last 30 Days",
+            metrics: {
+                totalCalls: 1480,
+                schedulingConversion: 35,
+                schedulingTarget: 40,
+                missedCalls: 142,
+                unactionedVoicemails: 24,
+                revenuePotential: 138400,
+                hotRevenueOpportunities: 22,
+                avgCallScore: 72,
+                avgCallScoreTarget: 75
+            },
+            audioUrl: "/audio/sample-30days.mp3",
+            overview: "Your practice handled **1,480** calls over the last 30 days. Scheduling calls were the largest contributor at **45%** of total volume. **142** calls were missed and **24** voicemails remain un-actioned.",
+            conversions: "New patient scheduling conversion averaged **35%** against a **40%** target, with consistent performance drops observed during lunch hours (**12–1 PM**) and late afternoons (**4–5 PM**). Existing patient conversion remained exceptional at **81%**, and recare conversion met the benchmark at **65%**. Cancellations averaged **22%** of all rescheduling attempts.",
+            followUps: "Of the **142** missed calls, **28** have not been recovered — **18** of which were new patients. Out of **24** unactioned voicemails, **5** are pending return calls, including **2** with high-priority service requests.",
+            revenueOpportunities: "**112** open opportunities were generated over the last 30 days, totalling **$138,400** in potential revenue. **22** are flagged **HOT** and need immediate outreach.",
+            coachingSignals: "Team average monthly call score was **72 / 100**, against a **75** target. Four reps scored below **65** over the month. Gaps identified include missed opportunities to pitch secondary family bookings, not verifying insurance proactively, and neglecting to offer immediate slots on inbound scheduling calls."
+        }
+    };
+    res.json({
+        status: true,
+        samples: sampleData
+    });
+});
+
 // Serve frontend from public directory
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -281,10 +354,12 @@ app.post("/api/summary", async (req, res) => {
                 url: elevenLabsUrl,
                 data: {
                     text: podcastScript,
-                    model_id: "eleven_monolingual_v1",
+                    model_id: "eleven_turbo_v2_5",
                     voice_settings: {
                         stability: 0.5,
-                        similarity_boost: 0.75
+                        similarity_boost: 0.75,
+                        style: 0.3,
+                        use_speaker_boost: true
                     }
                 },
                 headers: {

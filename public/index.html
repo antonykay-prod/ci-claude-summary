@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Prompt Center | CI Action Centre</title>
+    <title>CI Action Centre | Summary Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
@@ -14,19 +14,205 @@
         <header>
             <div class="logo">
                 <span class="logo-icon">✨</span>
-                <h1>Prompt Center</h1>
+                <h1>CI Action Centre</h1>
             </div>
-            <p class="subtitle">Management and visualization of AI prompts used in CI Action Centre Summary.</p>
+            <p class="subtitle">Smart dental practice analytics, coaching insights, and ElevenLabs audio summaries.</p>
         </header>
 
         <nav class="tabs">
-            <button class="tab-btn active" onclick="switchTab('prompts')">Prompts</button>
+            <button class="tab-btn active" onclick="switchTab('summary-hub')">Summary Hub</button>
+            <button class="tab-btn" onclick="switchTab('prompts')">Prompts</button>
             <button class="tab-btn" onclick="switchTab('dashboard')">Cache Dashboard</button>
         </nav>
 
-        <div id="tab-prompts" class="tab-content active">
+        <!-- Summary Hub Tab Content -->
+        <div id="tab-summary-hub" class="tab-content active">
+            <div class="hub-wrapper">
+                
+                <!-- Period Toggle Segmented Control -->
+                <div class="period-selector">
+                    <button class="period-btn active" onclick="selectPeriod('yesterday')">Yesterday</button>
+                    <button class="period-btn" onclick="selectPeriod('last7days')">Last 7 Days</button>
+                    <button class="period-btn" onclick="selectPeriod('last30days')">Last 30 Days</button>
+                </div>
+
+                <!-- Metrics Dashboard Grid -->
+                <div class="metrics-grid" id="metrics-container">
+                    <div class="metric-card primary">
+                        <div class="metric-header">
+                            <span>Total Calls</span>
+                            <span class="metric-icon">📞</span>
+                        </div>
+                        <div class="metric-value" id="metric-total-calls">-</div>
+                        <div class="metric-sub">Processed volume</div>
+                    </div>
+                    
+                    <div class="metric-card success">
+                        <div class="metric-header">
+                            <span>NP Conversion</span>
+                            <span class="metric-icon">📈</span>
+                        </div>
+                        <div class="metric-value" id="metric-conversion">-</div>
+                        <div class="metric-sub">Target: 40%</div>
+                    </div>
+
+                    <div class="metric-card danger">
+                        <div class="metric-header">
+                            <span>Follow Ups</span>
+                            <span class="metric-icon">⚠️</span>
+                        </div>
+                        <div class="metric-value" id="metric-follow-ups">-</div>
+                        <div class="metric-sub">Pending items</div>
+                    </div>
+
+                    <div class="metric-card gold">
+                        <div class="metric-header">
+                            <span>Revenue Opps</span>
+                            <span class="metric-icon">💰</span>
+                        </div>
+                        <div class="metric-value" id="metric-revenue">-</div>
+                        <div class="metric-sub" id="metric-revenue-sub">-</div>
+                    </div>
+
+                    <div class="metric-card accent">
+                        <div class="metric-header">
+                            <span>Coaching Score</span>
+                            <span class="metric-icon">🎯</span>
+                        </div>
+                        <div class="metric-value" id="metric-coaching-score">-</div>
+                        <div class="metric-sub">Target: 75 / 100</div>
+                    </div>
+                </div>
+
+                <!-- Custom Apple/Spotify Styled Podcast Player -->
+                <div class="podcast-player">
+                    <div class="player-art">
+                        🎙️
+                        <div class="voice-badge">Matilda</div>
+                    </div>
+                    
+                    <div class="player-main">
+                        <div class="player-info">
+                            <div>
+                                <div class="player-title" id="player-title">Daily Practice Podcast</div>
+                                <div class="player-subtitle">Practice Consultant Daily Briefing • ElevenLabs AI Voice</div>
+                            </div>
+                            <!-- Live Waveform Equalizer -->
+                            <div class="equalizer" id="player-equalizer">
+                                <div class="equalizer-bar"></div>
+                                <div class="equalizer-bar"></div>
+                                <div class="equalizer-bar"></div>
+                                <div class="equalizer-bar"></div>
+                                <div class="equalizer-bar"></div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-container">
+                            <span class="timeline-time" id="player-current-time">0:00</span>
+                            <div class="timeline-bar-wrapper">
+                                <input type="range" class="timeline-slider" id="player-slider" min="0" max="100" value="0">
+                            </div>
+                            <span class="timeline-time" id="player-duration">0:00</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div class="player-controls-group">
+                                <button class="control-btn" onclick="skipAudio(-10)" title="Skip back 10 seconds">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.9 22M2 9V3M2 3h6M2 3l7 7"/></svg>
+                                    <span style="font-size: 0.65rem; margin-left: 2px; font-weight: 700;">10s</span>
+                                </button>
+                                
+                                <button class="control-btn play-pause-btn" id="player-play-btn" onclick="toggleAudio()" title="Play/Pause">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" id="pause-icon" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                </button>
+                                
+                                <button class="control-btn" onclick="skipAudio(10)" title="Skip forward 10 seconds">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.1A5 5 0 0 0 18.1 20M22 12.05A9 9 0 0 0 14.1 22M22 9V3M22 3h-6M22 3l-7 7"/></svg>
+                                    <span style="font-size: 0.65rem; margin-left: 2px; font-weight: 700;">10s</span>
+                                </button>
+                            </div>
+
+                            <div class="player-right">
+                                <div class="volume-container">
+                                    <span style="font-size: 1rem; opacity: 0.7;">🔊</span>
+                                    <input type="range" class="volume-slider" id="player-volume" min="0" max="100" value="80">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden audio HTML5 tag -->
+                <audio id="main-audio-element" style="display:none;"></audio>
+
+                <!-- Detailed Text Summary Segmented Cards -->
+                <div class="report-grid">
+                    <!-- Overview Card -->
+                    <div class="executive-card report-card-full">
+                        <div class="card-title-bar">
+                            <h2><span>📊</span> Executive Performance Overview</h2>
+                            <div class="card-badge">Summary</div>
+                        </div>
+                        <div class="report-text" id="report-overview">-</div>
+                    </div>
+
+                    <!-- Conversions Card -->
+                    <div class="executive-card report-card-half">
+                        <div class="card-title-bar">
+                            <h2><span>📈</span> Patient Scheduling & Conversions</h2>
+                            <div class="card-badge">Conversions</div>
+                        </div>
+                        <div class="report-text" id="report-conversions">-</div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                                <span>New Patient Conversion Rate</span>
+                                <span id="bar-conversion-label">34% / 40% Target</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="bar-conversion-fill" style="width: 85%;"></div>
+                                <div class="target-marker" style="left: 40%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Follow Ups Card -->
+                    <div class="executive-card report-card-half">
+                        <div class="card-title-bar">
+                            <h2><span>⚠️</span> Critical Follow-Up Actions</h2>
+                            <div class="card-badge glow-hot">Alerts</div>
+                        </div>
+                        <div class="report-text" id="report-follow-ups">-</div>
+                    </div>
+
+                    <!-- Revenue Opportunities Card -->
+                    <div class="executive-card report-card-half">
+                        <div class="card-title-bar">
+                            <h2><span>💰</span> Open Revenue Opportunities</h2>
+                            <div class="card-badge" id="report-revenue-badge" style="background: rgba(251, 191, 36, 0.15); color: var(--gold); border-color: rgba(251, 191, 36, 0.3);">5 Opps</div>
+                        </div>
+                        <div class="report-text" id="report-revenue-text">-</div>
+                    </div>
+
+                    <!-- Coaching Signals Card -->
+                    <div class="executive-card report-card-half">
+                        <div class="card-title-bar">
+                            <h2><span>🎯</span> Coaching Signals & Skill Gaps</h2>
+                            <div class="card-badge">Coaching</div>
+                        </div>
+                        <div class="report-text" id="report-coaching-text" style="display: none;"></div>
+                        <ul class="coaching-checklist" id="report-coaching-list">
+                            <!-- Populated dynamically -->
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Prompts Tab Content -->
+        <div id="tab-prompts" class="tab-content">
             <main id="prompt-list" class="prompt-grid">
-                <!-- Prompts will be injected here -->
                 <div class="loading">
                     <div class="spinner"></div>
                     <p>Loading prompts...</p>
@@ -34,6 +220,7 @@
             </main>
         </div>
 
+        <!-- Cache Dashboard Tab Content -->
         <div id="tab-dashboard" class="tab-content">
             <div class="dashboard-controls">
                 <input type="text" id="search-location" placeholder="Search Location ID...">
@@ -61,11 +248,26 @@
         </div>
 
         <footer>
-            <p>&copy; 2026 CI Action Centre. All prompts are powered by Claude 3.5 Opus.</p>
+            <p>&copy; 2026 CI Action Centre. Powered by ElevenLabs Matilda Voice & Claude 3.5 AI Summarization.</p>
         </footer>
     </div>
 
     <script>
+        // Audio Player Controls & Elements
+        const audio = document.getElementById('main-audio-element');
+        const playBtn = document.getElementById('player-play-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const slider = document.getElementById('player-slider');
+        const currentTimeEl = document.getElementById('player-current-time');
+        const durationEl = document.getElementById('player-duration');
+        const equalizer = document.getElementById('player-equalizer');
+        const volumeSlider = document.getElementById('player-volume');
+
+        let samplesData = {};
+        let currentPeriod = 'yesterday';
+
+        // Load Prompts
         async function fetchPrompts() {
             try {
                 const response = await fetch('/api/prompts');
@@ -124,9 +326,6 @@
         }
 
         window.copyPrompt = function(id) {
-            // Placeholder for copy functionality
-            const code = document.querySelector(`.prompt-card:has(.badge:contains("${id}")) pre code`);
-            // Actually easier to just find it from the data if I stored it, or just use the textContent
             const text = event.target.closest('.prompt-card').querySelector('pre code').textContent;
             navigator.clipboard.writeText(text).then(() => {
                 const btn = event.target;
@@ -140,10 +339,7 @@
             });
         }
 
-        fetchPrompts();
-        fetchCache();
-
-        // Dashboard Cache Logic
+        // Cache Management Logic
         let cacheData = [];
         async function fetchCache() {
             try {
@@ -211,14 +407,12 @@
 
             const keys = selected.map(cb => cb.value);
             
-            // 1. Delete from cache so it forces a regeneration
             await fetch('/api/cache', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ keys })
             });
             
-            // 2. Call summary api to recreate
             for (const cb of selected) {
                 const payload = JSON.parse(cb.dataset.payload);
                 try {
@@ -236,13 +430,217 @@
             fetchCache();
         }
         
+        // Navigation between Tabs
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
             document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
-            if(tabId === 'dashboard') fetchCache();
+            
+            // Pause audio if switching away from Summary Hub
+            if (tabId !== 'summary-hub') {
+                pausePodcast();
+            }
+
+            if (tabId === 'dashboard') fetchCache();
         }
+
+        // --- Summary Hub Functions ---
+        
+        // Load Samples from API
+        async function loadSummaryHubSamples() {
+            try {
+                const response = await fetch('/api/samples');
+                const data = await response.json();
+                if (data.status) {
+                    samplesData = data.samples;
+                    selectPeriod('yesterday'); // default
+                }
+            } catch(e) {
+                console.error("Failed to load sample summary details:", e);
+            }
+        }
+
+        // Helper to simple-parse bold **text** in HTML
+        function formatMarkdown(text) {
+            if (!text) return '';
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        }
+
+        // Handles Period selection (segmented button toggles)
+        function selectPeriod(period) {
+            currentPeriod = period;
+            
+            // Update period selector button UI
+            document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = Array.from(document.querySelectorAll('.period-btn')).find(btn => 
+                btn.getAttribute('onclick').includes(period)
+            );
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const item = samplesData[period];
+            if (!item) return;
+
+            // Pause whatever is playing
+            pausePodcast();
+
+            // Setup new Audio source
+            audio.src = item.audioUrl;
+            audio.load();
+            
+            // Reset player visual timelines
+            slider.value = 0;
+            currentTimeEl.textContent = "0:00";
+            durationEl.textContent = "0:00";
+
+            // Update Player Titles
+            let titleText = "Daily Practice Podcast";
+            if (period === 'last7days') titleText = "Weekly Practice Podcast";
+            if (period === 'last30days') titleText = "Monthly Practice Podcast";
+            document.getElementById('player-title').textContent = titleText;
+
+            // Update Metrics Cards
+            document.getElementById('metric-total-calls').textContent = item.metrics.totalCalls;
+            document.getElementById('metric-conversion').textContent = item.metrics.schedulingConversion + '%';
+            document.getElementById('metric-follow-ups').textContent = item.metrics.missedCalls + ' Missed';
+            
+            // Revenue formats
+            document.getElementById('metric-revenue').textContent = '$' + item.metrics.revenuePotential.toLocaleString();
+            document.getElementById('metric-revenue-sub').textContent = `${item.metrics.hotRevenueOpportunities} Hot Opportunities`;
+            document.getElementById('report-revenue-badge').textContent = `${item.metrics.hotRevenueOpportunities} Hot Leads`;
+
+            // Coaching Score
+            document.getElementById('metric-coaching-score').textContent = `${item.metrics.avgCallScore} / 100`;
+
+            // Update Text Summary Section Contents
+            document.getElementById('report-overview').innerHTML = formatMarkdown(item.overview);
+            document.getElementById('report-conversions').innerHTML = formatMarkdown(item.conversions);
+            document.getElementById('report-follow-ups').innerHTML = formatMarkdown(item.followUps);
+            document.getElementById('report-revenue-text').innerHTML = formatMarkdown(item.revenueOpportunities);
+
+            // Update conversions progress bar
+            const conversionFill = document.getElementById('bar-conversion-fill');
+            const conversionLabel = document.getElementById('bar-conversion-label');
+            conversionFill.style.width = ((item.metrics.schedulingConversion / 40) * 100) + '%';
+            conversionLabel.textContent = `${item.metrics.schedulingConversion}% / 40% Target`;
+            
+            if (item.metrics.schedulingConversion >= 40) {
+                conversionFill.className = 'progress-bar-fill success';
+            } else {
+                conversionFill.className = 'progress-bar-fill danger';
+            }
+
+            // Coaching Signal checklist logic
+            const checklist = document.getElementById('report-coaching-list');
+            checklist.innerHTML = '';
+            
+            let gaps = [];
+            if (period === 'yesterday') {
+                gaps = [
+                    { title: "Immediate Slot Offer", desc: "Failed to offer an immediate slot to incoming callers proactively." },
+                    { title: "Next-Steps Confirmation", desc: "Neglected to explicitly confirm next steps before finishing calls." },
+                    { title: "Recare Treatment Offer", desc: "Missed presenting clear treatment options during recare outreach." }
+                ];
+            } else if (period === 'last7days') {
+                gaps = [
+                    { title: "Immediate Slot Offer", desc: "Missing the opportunity to secure a slot during primary interactions." },
+                    { title: "Next-Steps Confirmation", desc: "Weak execution on concluding calls with solid, confirmed actions." },
+                    { title: "Recare Treatment Offer", desc: "Failure to articulate outstanding clinical opportunities to recare clients." }
+                ];
+            } else {
+                gaps = [
+                    { title: "Proactive Spot Allocation", desc: "Team is not standardizing offering immediate appointment slots on incoming calls." },
+                    { title: "Insurance Benefits Verification", desc: "Missed opportunities to check insurance status to ease the reservation process." },
+                    { title: "Secondary Family Booking", desc: "Failing to ask scheduling patients if other family members need a visit." }
+                ];
+            }
+
+            gaps.forEach(gap => {
+                const li = document.createElement('li');
+                li.className = 'coaching-item';
+                li.innerHTML = `
+                    <div class="coaching-check">✖</div>
+                    <div class="coaching-desc"><strong>${gap.title}:</strong> ${gap.desc}</div>
+                `;
+                checklist.appendChild(li);
+            });
+        }
+
+        // --- Custom Audio Engine Handlers ---
+        
+        function toggleAudio() {
+            if (audio.paused) {
+                playPodcast();
+            } else {
+                pausePodcast();
+            }
+        }
+
+        function playPodcast() {
+            audio.play().then(() => {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+                equalizer.classList.add('playing');
+            }).catch(e => {
+                console.error("Audio playback error:", e);
+            });
+        }
+
+        function pausePodcast() {
+            audio.pause();
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+            equalizer.classList.remove('playing');
+        }
+
+        function skipAudio(seconds) {
+            audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + seconds));
+        }
+
+        // Formats seconds into MM:SS
+        function formatTime(secs) {
+            if (isNaN(secs)) return "0:00";
+            const minutes = Math.floor(secs / 60);
+            const seconds = Math.floor(secs % 60);
+            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // Event Listeners for Audio element
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                const percentage = (audio.currentTime / audio.duration) * 100;
+                slider.value = percentage;
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+            }
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+            durationEl.textContent = formatTime(audio.duration);
+        });
+
+        audio.addEventListener('ended', () => {
+            pausePodcast();
+            slider.value = 0;
+            currentTimeEl.textContent = "0:00";
+        });
+
+        // Timeline slider scrubbing
+        slider.addEventListener('input', () => {
+            if (audio.duration) {
+                const newTime = (slider.value / 100) * audio.duration;
+                audio.currentTime = newTime;
+            }
+        });
+
+        // Volume control
+        volumeSlider.addEventListener('input', () => {
+            audio.volume = volumeSlider.value / 100;
+        });
+
+        // Initialize script calls
+        fetchPrompts();
+        fetchCache();
+        loadSummaryHubSamples();
     </script>
 </body>
 </html>

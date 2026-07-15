@@ -1,0 +1,170 @@
+{
+    "status": true,
+    "message": "AI Summary fetched successfully",
+    "data": {
+        "overview": {
+            "total_calls": 0,
+            "by_call_type": [{
+                "name": "Billing",
+                "count": 0
+            }, {
+                "name": "Confirmations",
+                "count": 0
+            }, {
+                "name": "Emergency",
+                "count": 0
+            }, {
+                "name": "Insurance",
+                "count": 0
+            }, {
+                "name": "Rescheduling",
+                "count": 0
+            }, {
+                "name": "Scheduling",
+                "count": 0
+            }, {
+                "name": "Recare",
+                "count": 0
+            }, {
+                "name": "Clinical",
+                "count": 0
+            }, {
+                "name": "Vendor",
+                "count": 0
+            }, {
+                "name": "Product Order",
+                "count": 0
+            }, {
+                "name": "Verifications",
+                "count": 0
+            }, {
+                "name": "Incomplete",
+                "count": 0
+            }, {
+                "name": "Missed",
+                "count": 0
+            }, {
+                "name": "Unanswered",
+                "count": 0
+            }, {
+                "name": "Others",
+                "count": 0
+            }],
+            "by_outcome": []
+        },
+        "conversions": {
+            "scheduling": {
+                "outcomes": [],
+                "reasons_for_not_booking": []
+            },
+            "emergency": {
+                "outcomes": [],
+                "reasons_for_not_booking": []
+            },
+            "rescheduling": {
+                "outcomes": [],
+                "reasons_for_not_booking": []
+            }
+        },
+        "follow_ups": [{
+            "name": "missed_call",
+            "count": 0
+        }, {
+            "name": "voicemail",
+            "count": 0
+        }],
+        "revenue_opportunities": {
+            "hot_open": {
+                "by_reason_for_visit": [],
+                "by_revenue_potential": []
+            },
+            "warm_open_high_revenue": {
+                "by_reason_for_visit": []
+            },
+            "cold_open_highest_revenue": {
+                "by_reason_for_visit": []
+            }
+        },
+        "coaching_signals": {
+            "avg_score": 0,
+            "by_call_type": [{
+                "name": "Billing",
+                "avg_score": 0
+            }, {
+                "name": "Confirmations",
+                "avg_score": 0
+            }, {
+                "name": "Emergency",
+                "avg_score": 0
+            }, {
+                "name": "Insurance",
+                "avg_score": 0
+            }, {
+                "name": "Rescheduling",
+                "avg_score": 0
+            }, {
+                "name": "Scheduling",
+                "avg_score": 0
+            }, {
+                "name": "Recare",
+                "avg_score": 0
+            }, {
+                "name": "Clinical",
+                "avg_score": 0
+            }, {
+                "name": "Vendor",
+                "avg_score": 0
+            }, {
+                "name": "Product Order",
+                "avg_score": 0
+            }, {
+                "name": "Verifications",
+                "avg_score": 0
+            }, {
+                "name": "Incomplete",
+                "avg_score": 0
+            }, {
+                "name": "Missed",
+                "avg_score": 0
+            }, {
+                "name": "Unanswered",
+                "avg_score": 0
+            }, {
+                "name": "Others",
+                "avg_score": 0
+            }],
+            "by_user": []
+        },
+        "benchmarks": [{
+            "name": "Avg Call Score",
+            "value": "0%"
+        }, {
+            "name": "Voicemail Returns",
+            "value": "100%"
+        }, {
+            "name": "Missed Call Recovery",
+            "value": "100%"
+        }, {
+            "name": "Task Type Completion",
+            "value": "0%"
+        }, {
+            "name": "New Patient First Call Conversion",
+            "value": "60%"
+        }, {
+            "name": "New Patient Opportunity Follow Ups",
+            "value": "90%"
+        }, {
+            "name": "Existing Patient First Call Conversion",
+            "value": "0%"
+        }, {
+            "name": "Existing Patient Opportunity Follow Ups",
+            "value": "90%"
+        }],
+        "location": "4771dce8-7546-4ee4-ba5f-9a50afe91e6a",
+        "organization": "aa55c621-3206-4e84-af43-99493e9bed9a"
+    },
+    "Date_range": {
+        "startDate": "1746057600000",
+        "endDate": "1746143999000"
+    }
+}
